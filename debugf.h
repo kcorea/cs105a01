@@ -19,13 +19,9 @@ void __stubprintf (char *file, int line, const char *func,
 // Debugging utility.
 void set_debugflags (char *flags);
 
-#ifndef NDEBUG
-#define DEBUGF(FLAG,...) // DEBUG (FLAG, __VA_ARGS__)
-#else
-#define DEBUGF(FLAG,...)\
+#define DEBUGF(FLAG,...) \
         __debugprintf (FLAG, __FILE__, __LINE__, __VA_ARGS__)
 void __debugprintf (char flag, char *file, int line,
                     char *format, ...);
-#endif
 
 #endif

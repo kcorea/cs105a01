@@ -42,7 +42,7 @@ void __debugprintf (char flag, char *file, int line,
    if (alldebugflags || strchr (debugflags, flag) != NULL) {
       fflush (NULL);
       print_execname (stderr);
-      fprintf (stderr, "DEBUGF(%c): %s[%d}:\n",
+      fprintf (stderr, "DEBUGF(%c): %s[%d]:\n",
                flag, file, line);
       va_start (args, format);
       vfprintf (stderr, format, args);

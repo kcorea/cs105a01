@@ -8,9 +8,10 @@ GMAKE     = gmake --no-print-directory
 
 GCC       = gcc -g -O0 -Wall -Wextra -std=gnu99
 MKDEPS    = gcc -MM
+GRIND     = valgrind --leak-check=full
 
-CSOURCE   = debugf.c main.c
-CHEADER   = debugf.h
+CSOURCE   = debugf.c dqueue.c slist.c main.c
+CHEADER   = debugf.h dqueue.h slist.h
 OBJECTS   = ${CSOURCE:.c=.o}
 EXECBIN   = myls
 
@@ -28,6 +29,10 @@ clean :
 
 spotless : clean
 	- rm ${EXECBIN}
+
+test : ${EXECBIN}
+	- ${GRIND} ./${EXECBIN} -l 
+	- ${GRIND} ./${EXECBIN} -R 
 
 deps : ${CSOURCE} ${CHEADER}
 	@ echo "# ${DEPSFILE} created `date`" >${DEPSFILE}

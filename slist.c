@@ -13,13 +13,17 @@
 #include "debugf.h"
 #include "slist.h"
 
+static char *slist_tag = "struct st_slist";
+static char *slist_node_tag = "struct st_node"; 
 
 struct st_slist {
+   char *tag;
    slist_node head;
    int blkct;
 };
 
 struct st_node {
+   char *tag;
    char *permissions;
    char *uid;
    char *gid;
@@ -31,6 +35,24 @@ struct st_node {
    int size;
    slist_node link;
 };
+
+bool is_slist (slist_ref slist) {
+   return slist != NULL && slist->tag == slist_tag;
+} 
+
+bool is_slistnode (slist_node node) {
+   return node != NULL && node->tag == slist_node_tag;
+}
+
+bool is_hidden (slist_node node) {
+   assert (is_slistnode (node) && node->fname != NULL);
+   return node->fname[0] == '.';
+} 
+
+bool is_dir (slist_node node) {
+   assert (is_slistnode (node));
+   return node->permissions[0] == 'd';
+}
 
 char *get_pstr (mode_t mode) {
    char buffer[16];
@@ -45,27 +67,18 @@ char *get_pstr (mode_t mode) {
    strcat (buffer, (mode & S_IROTH) ? "r" : "-");
    strcat (buffer, (mode & S_IWOTH) ? "w" : "-");
    strcat (buffer, (mode & S_IXOTH) ? "x" : "-");
-  
-   //STUBPRINTF ("%s\n", buffer);
-
    return strdup (buffer);
 }
 
 char *get_uidstr (uid_t uid) {
    struct passwd *pwd;
    pwd = getpwuid (uid); // error check
-
-   //STUBPRINTF ("%s\n", pwd->pw_name);  
-
    return strdup (pwd->pw_name);
 }
 
 char *get_gidstr (gid_t gid) {
    struct group *grp;
    grp = getgrgid (gid); // handle error
-
-   //STUBPRINTF ("%s\n", grp->gr_name);  
-
    return strdup (grp->gr_name);
 }
 
@@ -73,9 +86,6 @@ char *get_mtimestr (time_t mtime) {
    char buffer[16];
    struct tm *mtinfo = localtime (&mtime);
    strftime (buffer, 16, "%b %e %H:%M", mtinfo);
-
-   //STUBPRINTF ("%s\n", buffer);  
-
    return strdup (buffer);
 }
 
@@ -86,13 +96,15 @@ char *tolower_str (char *string) {
    for (int itor = 0; itor < len; ++itor) {
       lstring[itor] = tolower (lstring[itor]);
    }
-   return strdup (lstring);
+   return lstring;
 }
 
 slist_node new_slistnode (struct stat *fs, char *filename) {
+   assert (fs != NULL && filename != NULL);
    slist_node new = malloc (sizeof (struct st_node));
    assert (new != NULL);
 
+   new->tag = slist_node_tag;
    new->permissions = get_pstr (fs->st_mode);
    new->uid = get_uidstr (fs->st_uid);
    new->gid = get_gidstr (fs->st_gid);
@@ -102,27 +114,29 @@ slist_node new_slistnode (struct stat *fs, char *filename) {
    new->blocks = fs->st_blocks;
    new->hlinks = fs->st_nlink;
    new->size = fs->st_size;
-
-   //STUBPRINTF ("hlinks=%d; size=%d\n", new->hlinks, new->size);
-
    new->link = NULL;   
+   DEBUGF ('n', "node=%p; fname=%s; lfname=%s\n", 
+            new, new->fname, new->lfname);
    return new;
 }
 
 slist_ref new_slist (void) {
    slist_ref new = malloc (sizeof (struct st_slist));
    assert (new != NULL);
+
+   new->tag = slist_tag;
    new->head = NULL;
    new->blkct = 0;
    return new;
 }
 
 void insert_slist (slist_ref slist, slist_node newnode) {
+   assert (is_slist (slist) && is_slistnode (newnode));
    slist_node prev = NULL;
    slist_node curr = slist->head;
    // Find insertion position.
    while (curr != NULL) {
-      if (strcmp (curr->lfname, newnode->lfname ) > 0) break;
+      if (strcmp (curr->lfname, newnode->lfname) > 0) break;
       prev = curr;
       curr = curr->link;
    }
@@ -130,15 +144,34 @@ void insert_slist (slist_ref slist, slist_node newnode) {
    newnode->link = curr;
    if (prev == NULL) slist->head = newnode;
                 else prev->link = newnode;
-   slist->blkct += newnode->blocks;
+   if (!is_dir (newnode)) slist->blkct += newnode->blocks;
+}
+
+void free_slistnode (slist_node node) {
+   assert (is_slistnode (node));
+   free (node->permissions);
+   free (node->uid);
+   free (node->gid);
+   free (node->mtime);
+   free (node->fname);
+   free (node->lfname);
+   free (node);   
 }
 
 void free_slist (slist_ref slist) {
-   STUBPRINTF ("free all nodes\n");
+   assert (is_slist (slist));
+   slist_node old = slist->head;
+   for (;;) {
+      if (old == NULL) break;
+      slist->head = slist->head->link;
+      free_slistnode (old);
+      old = slist->head;
+   }
+   free (slist);
 }
 
 void print_slist_long (slist_ref slist) {
-   printf ("total %d\n", slist->blkct);
+   printf ("total %d\n", slist->blkct); 
    slist_node curr = slist->head;
    for (;;) {
       if (curr == NULL) break;
