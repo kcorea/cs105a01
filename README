@@ -1,11 +1,75 @@
-Name:     Kenneth Corea
-Username: kcorea
+Name: Kenneth Corea
+UID:  kcorea
 
+Contents:
+  - Summary
+  - Compiling
+  - Files
+  - Notes
+
+
 ==[ Summary ]========================================================
 
+SYNOPSIS
+  ./myls [-lR] [-@ debugflags] [FILE...]
 
+DESCRIPTION
+   List information about the FILEs (the current directory by 
+   default). Sort entries alphabetically.
+
+OPTIONS
+   Options are scanned using getopt_long(3c), and are subject to 
+   its restrictions and conventions. 
+
+   -l    use a long listing format
+
+   -R    list subdirectories recursively
+
+   -@ debugflags
+         turns on debugging flags for the DEBUGF macro. The option
+         -@@ turns on all debug flags
+
+OPERANDS
+   Each operand is the path of the directory that is to be listed. 
+   If the path is not absolute, then ./FILE is listed. If no 
+   operands are specified, then the current directory is listed.
+
+EXIT STATUS
+   0   if OK,
+ 
+   1   if errors detected (e.g., cannot access command-line 
+       argument).
+
+
+==[ Compiling ]======================================================
+
+  make all          # creates executable myls 
+  make clean        # removes object files
+  make spotless     # removes object files and executable
+
+
 ==[ Files ]==========================================================
 
+debugf.c        utility for debugging
+debugf.h        debugging utility header file
+main.c          main program
+Makefile        Makefile for this project
+README          this file
+slist.c         utility list for sorting and printing
+slist.h         list sorting and printing header file
+dstack.h        utility stack for recursion
+dstacj.c        stack utility header file
 
+
 ==[ Notes ]==========================================================
+
+*  myls currently only takes single file operand.
+
+*  Formatting for byte count in long listing is restricted to a five
+   character width. Similarly, hard link count is restricted to two.
+
+*  Total block count in long listing is described in number of 1024B 
+   blocks.
+
+*  myls errors our if bad options are detected.
 

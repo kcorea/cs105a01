@@ -20,6 +20,7 @@ struct st_slist {
    char *tag;
    slist_node head;
    int blkct;
+   slist_node stack_top;
 };
 
 struct st_node {
@@ -34,6 +35,7 @@ struct st_node {
    int hlinks;
    int size;
    slist_node link;
+   slist_node slink;
 };
 
 bool is_slist (slist_ref slist) {
@@ -115,6 +117,7 @@ slist_node new_slistnode (struct stat *fs, char *filename) {
    new->hlinks = fs->st_nlink;
    new->size = fs->st_size;
    new->link = NULL;   
+   new->slink = NULL;
    DEBUGF ('n', "node=%p; fname=%s; lfname=%s\n", 
             new, new->fname, new->lfname);
    return new;
@@ -127,6 +130,7 @@ slist_ref new_slist (void) {
    new->tag = slist_tag;
    new->head = NULL;
    new->blkct = 0;
+   new->stack_top = NULL;
    return new;
 }
 
@@ -144,14 +148,49 @@ void insert_slist (slist_ref slist, slist_node newnode) {
    newnode->link = curr;
    if (prev == NULL) slist->head = newnode;
                 else prev->link = newnode;
-   if (!is_dir (newnode)) slist->blkct += newnode->blocks;
+
+   if (!is_hidden (newnode)) slist->blkct += newnode->blocks;
+}
+
+bool has_empty_dirstack (slist_ref slist) {
+   assert (is_slist (slist));
+   return slist->stack_top == NULL;
+}
+
+char *pop_slistdir (slist_ref slist) {
+   assert (is_slist (slist));
+   assert (!has_empty_dirstack (slist));
+   slist_node tmp = slist->stack_top;
+   char *dir = tmp->fname;
+   slist->stack_top = slist->stack_top->slink;
+   return dir;
+}
+
+void push_slistdir (slist_ref slist, slist_node node) {
+   assert (is_slist (slist));
+   assert (is_slistnode (node));
+      DEBUGF ('f',"");
+   node->slink = slist->stack_top;
+   slist->stack_top = node;
+}
+
+void stack_slistdir (slist_ref slist) {
+   assert (is_slist (slist));
+
+   slist_node curr = slist->head;
+   for (;;) {
+      if (curr == NULL) break;
+      DEBUGF ('f',"");
+      if (is_dir (curr)) push_slistdir (slist, curr);
+      curr = curr->link;
+   }
 }
 
 void free_slistnode (slist_node node) {
    assert (is_slistnode (node));
    free (node->permissions);
-   free (node->uid);
    free (node->gid);
+   free (node->uid);
    free (node->mtime);
    free (node->fname);
    free (node->lfname);
@@ -171,7 +210,7 @@ void free_slist (slist_ref slist) {
 }
 
 void print_slist_long (slist_ref slist) {
-   printf ("total %d\n", slist->blkct); 
+   printf ("total %d\n", slist->blkct/2);  // 1024B block size
    slist_node curr = slist->head;
    for (;;) {
       if (curr == NULL) break;
