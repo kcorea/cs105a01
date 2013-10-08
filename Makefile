@@ -1,13 +1,6 @@
 # Makefile for myls project
 
-MKFILE    = Makefile
-DEPSFILE  = ${MKFILE}.deps
-NOINCLUDE = clean spotless
-NEEDINCL  = ${filter ${NOINCLUDE}, ${MAKECMDGOALS}}
-GMAKE     = gmake --no-print-directory
-
 GCC       = gcc -g -O0 -Wall -Wextra -std=gnu99
-MKDEPS    = gcc -MM
 
 CSOURCE   = debugf.c slist.c dstack.c main.c
 CHEADER   = debugf.h slist.h dstack.h

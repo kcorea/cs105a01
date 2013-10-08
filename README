@@ -52,18 +52,19 @@ EXIT STATUS
 
 debugf.c        utility for debugging
 debugf.h        debugging utility header file
+dstack.h        utility stack for recursion
+dstack.c        stack utility header file
 main.c          main program
 Makefile        Makefile for this project
 README          this file
 slist.c         utility list for sorting and printing
 slist.h         list sorting and printing header file
-dstack.h        utility stack for recursion
-dstacj.c        stack utility header file
 
 
 ==[ Notes ]==========================================================
 
-*  myls currently only takes single file operand.
+*  Formatting for myls without the -l option lists the entries one
+   per line, unlike ls.
 
 *  Formatting for byte count in long listing is restricted to a five
    character width. Similarly, hard link count is restricted to two.
@@ -73,3 +74,6 @@ dstacj.c        stack utility header file
 
 *  myls errors our if bad options are detected.
 
+*  If myls detect multiple operands, they are listed in the order
+   they were provided on the command line. They are not sorted 
+   alphabetically like ls would do.

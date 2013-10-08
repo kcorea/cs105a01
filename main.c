@@ -21,10 +21,10 @@
 #define MAX_BUFFER_SIZE 1024
 
 struct prog_flags {
-   bool long_listing;  
-   bool recursive;
-   char **pathname;
-   int opct;
+   bool long_listing;   // long listing flag
+   bool recursive;      // recursive listing flag
+   char **pathname;     // command line operand array
+   int opct;            // command line operand count
 };
 
 char *execname = NULL;
@@ -32,6 +32,7 @@ int exit_status = EXIT_SUCCESS;
 struct prog_flags flags = {false, false, NULL, 0};
 stack_ref stack = NULL;
 
+// Error printing routine.
 void print_error (char *object, char *message) {
    fflush (NULL);
    fprintf (stderr, "%s: %s: %s\n", execname, object, message);
@@ -39,6 +40,7 @@ void print_error (char *object, char *message) {
    exit_status = EXIT_FAILURE;
 }
 
+// Printing format determined by long listing flag.
 void print_directory (slist_ref slist) {
    if (flags.long_listing == true) {
       print_slist_long (slist);
@@ -47,6 +49,8 @@ void print_directory (slist_ref slist) {
    }
 }
 
+// Utility that concatenates various strings according to format and
+// places them in buffer.
 void catlist (char *buffer, char *format, ...) {
    va_list args;
    va_start (args, format);
@@ -54,6 +58,7 @@ void catlist (char *buffer, char *format, ...) {
    va_end (args);
 }
 
+// Generates a pathname for fname and places result in buffer.
 void pathstr (char *buffer, char *path, char *fname) {
    char *dirc = strdup (path);
    char *basec = strdup (path);
@@ -84,6 +89,8 @@ void pathstr (char *buffer, char *path, char *fname) {
    free (basec);
 }
 
+// Push all pathnames of the subdirectories in slist and push them 
+// onto the recursion stack.
 void push_subdir (slist_ref slist, char *path) {
    stack_slistdir (slist);         
    for (;;) {
@@ -96,6 +103,7 @@ void push_subdir (slist_ref slist, char *path) {
    }
 }
 
+// Insert a directory entry if it is not a hidden file.
 void insert (slist_ref slist, char *path, char *ename) {
    char buffer[MAX_BUFFER_SIZE];
    pathstr (buffer, path, ename);
@@ -112,6 +120,8 @@ void insert (slist_ref slist, char *path, char *ename) {
    }
 }
 
+// Generate a slist of directory entries in specified path. Then
+// print the to stdout.
 void list (char *path) {
    DIR *dir = opendir (path);
    struct dirent *ent;
@@ -135,6 +145,7 @@ void list (char *path) {
    free_slist (slist);
 }
 
+// List directories in depth first order
 void recursive_list (char *path) {
    stack = new_stack ();
    push_stack (stack, path);
@@ -148,6 +159,8 @@ void recursive_list (char *path) {
    free_stack (stack);
 }
 
+// Function the reads command line arguments and sets up appropriate
+// flags.
 void set_options (int argc, char **argv) {
    static struct option long_options[] =
    {
@@ -184,6 +197,8 @@ void set_options (int argc, char **argv) {
    }
 }
 
+// Main function determines whether one or many directory entries 
+// will be recursively called.
 int main (int argc, char **argv) {
    execname = basename (argv[0]);
    set_execname (execname);

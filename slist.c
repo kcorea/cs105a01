@@ -18,9 +18,9 @@ static char *slist_node_tag = "struct st_node";
 
 struct st_slist {
    char *tag;
-   slist_node head;
-   int blkct;
-   slist_node stack_top;
+   int blkct;              // block count
+   slist_node head;        // list head
+   slist_node stack_top;   // directory stack
 };
 
 struct st_node {
@@ -32,10 +32,10 @@ struct st_node {
    char *fname;
    char *lfname;
    int blocks;
-   int hlinks;
-   int size;
-   slist_node link;
-   slist_node slink;
+   int hlinks;          
+   int size;            
+   slist_node link;     // list link
+   slist_node slink;    // directory stack link
 };
 
 bool is_slist (slist_ref slist) {
@@ -74,13 +74,13 @@ char *get_pstr (mode_t mode) {
 
 char *get_uidstr (uid_t uid) {
    struct passwd *pwd;
-   pwd = getpwuid (uid); // error check
+   pwd = getpwuid (uid); 
    return strdup (pwd->pw_name);
 }
 
 char *get_gidstr (gid_t gid) {
    struct group *grp;
-   grp = getgrgid (gid); // handle error
+   grp = getgrgid (gid);
    return strdup (grp->gr_name);
 }
 
@@ -148,7 +148,7 @@ void insert_slist (slist_ref slist, slist_node newnode) {
    newnode->link = curr;
    if (prev == NULL) slist->head = newnode;
                 else prev->link = newnode;
-
+   // update block count counter for slist if not a hidden file
    if (!is_hidden (newnode)) slist->blkct += newnode->blocks;
 }
 
@@ -169,18 +169,17 @@ char *pop_slistdir (slist_ref slist) {
 void push_slistdir (slist_ref slist, slist_node node) {
    assert (is_slist (slist));
    assert (is_slistnode (node));
-      DEBUGF ('f',"");
    node->slink = slist->stack_top;
    slist->stack_top = node;
 }
 
+// Run down entire slist and push when directory node is encoutered
 void stack_slistdir (slist_ref slist) {
    assert (is_slist (slist));
 
    slist_node curr = slist->head;
    for (;;) {
       if (curr == NULL) break;
-      DEBUGF ('f',"");
       if (is_dir (curr)) push_slistdir (slist, curr);
       curr = curr->link;
    }
